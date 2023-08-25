@@ -1,19 +1,21 @@
-public enum MetodoHttp {
+public enum HTTPStatus {
 
-    GET(200, "OK"),
-    POST(201, "Created"),
-    PUT(204, "No Content"),
-    DELETE(204, "No Content");
+    OK(200, "OK"),
+    CREATED(201, "Created"),
+    NO_CONTENT(204, "No Content"),
+    METHOD_NOT_ALLOWED(405,"Method Not Allowed"),
+    BAD_REQUEST(400,"Bad request"),
+    NOT_FOUND(404,"Not Found");
 
     private final int statusCode;
     private final String reasonText;
 
-    MetodoHttp(int statusCode, String reasonText) {
+    HTTPStatus(int statusCode, String reasonText) {
         this.statusCode = statusCode;
         this.reasonText = reasonText;
     }
 
-    MetodoHttp(int statusCode) {
+    HTTPStatus(int statusCode) {
         this(statusCode, null);
     }
 

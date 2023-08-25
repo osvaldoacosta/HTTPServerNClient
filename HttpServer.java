@@ -1,115 +1,132 @@
+
 import java.io.*;
 import java.net.*;
-import java.util.stream.Stream;
 
 public class HttpServer {
-    public static void main(String[] args) {
-        int port = 8080;
-        try {
-            final ServerSocket serverSocket = new ServerSocket(port);
-            System.err.println("Servidor iniciado na porta : " + port);
+  public static void main(String[] args) {
+    int port = 8080;
+    try {
+      final ServerSocket serverSocket = new ServerSocket(port);
+      System.err.println("Servidor iniciado na porta : " + port);
 
-            while (true) {
-                final Socket clientSocket = serverSocket.accept();
-                Thread thread = new Thread(new HandlerServerHttp(clientSocket));
-                thread.start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+      while (true) {
+        final Socket clientSocket = serverSocket.accept();
+        Thread thread = new Thread(new HandlerServerHttp(clientSocket));
+        thread.start();
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+  }
 }
 
 class HandlerServerHttp implements Runnable {
-    private Socket clientSocket;
+  private final Socket clientSocket;
 
-    public HandlerServerHttp(Socket clientSocket) {
-        this.clientSocket = clientSocket;
-    }
+  private static String mensagem = "felipe";
 
-    @Override
-    public void run() {
-        System.out.println("Nova requisicao!!!");
+  public HandlerServerHttp(Socket clientSocket) {
+    this.clientSocket = clientSocket;
+  }
 
-        try (
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        ) {
-            String requestLine = in.readLine();
+  @Override
+  public void run() {
+    System.out.println("Nova requisicao!!!");
 
-            if (requestLine == null) {
-                return;
-            }
-
-            String[] requestParts = requestLine.split(" ");
-
-            if (requestParts.length < 3) {
-                return;
-            }
-
-            String requestHttpMethod = requestParts[0]; //Extraindo o metodo http
-            String uri = requestParts[1]; //Extraindo a URI
-            String httpVersion = requestParts[2]; //Extraindo a versao http da requisicao do cliente
-
-            while ((requestLine = in.readLine()) != null && !requestLine.isEmpty()) {
-                System.err.println(requestLine);
-            }
-
-            System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
+    try (
+      BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
+      String requestLine = in.readLine();
 
 
-            MetodoHttp matchedMethod = Stream.of(MetodoHttp.values())
-                    .filter(method -> method.toString().equalsIgnoreCase(requestHttpMethod))
-                    .findFirst()
-                    .orElse(null);
+      if (requestLine == null) {
+        sendResponse(HTTPStatus.BAD_REQUEST);
+        return;
+      }
+      System.out.println(requestLine);
+      String[] requestParts = requestLine.split(" ");
 
-            if (matchedMethod == null) {
-                sendErrorReponse(405, "Method Not Allowed");
-                return;
-            }
-            if(matchedMethod.toString().equals("GET"))
-                sendResponse(matchedMethod);
+      if (requestParts.length < 3) {
+        sendResponse(HTTPStatus.BAD_REQUEST);
+        return;
+      }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+      String requestHttpMethod = requestParts[0]; // Extraindo o metodo http
+      String uri = requestParts[1]; // Extraindo a URI
+      String httpVersion = requestParts[2]; // Extraindo a versao http da requisicao do cliente
+
+      System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
+
+      if(!uri.equals("/pessoa")){
+        sendResponse(HTTPStatus.NOT_FOUND);
+        return;
+      }
+
+      StringBuilder bodyData = new StringBuilder();
+      String line;
+      StringBuilder headerData= new StringBuilder();
+
+      //Le e armazena os headers
+      while ((line = in.readLine()) != null && !line.isEmpty()) {
+        headerData.append(line).append("\r\n");
+      }
+
+      // Lê e armazena o body da requisicao
+      while (in.ready()) {
+        bodyData.append((char) in.read());
+      }
+
+      System.out.println("Headers:\n" + headerData);
+      System.err.println("Body:\n" + bodyData);
+
+      switch (requestHttpMethod){
+        case "GET" -> sendResponse(HTTPStatus.OK);
+        case "POST" -> {
+          if(mensagem.isEmpty()){
+            mensagem = "teste";
+            sendResponse(HTTPStatus.CREATED);
+          }
+          else sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
         }
+        case "PUT" -> {
+          mensagem = "testePut";
+
+          sendResponse(HTTPStatus.NO_CONTENT);
+        }
+        default -> sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
+      }
+
+
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        clientSocket.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
+  }
 
-    private void sendResponse(MetodoHttp metodo) throws IOException {
+  private void sendResponse(HTTPStatus status) throws IOException {
 
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-        StringBuilder jsonResponse = new StringBuilder();
+    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+    StringBuilder jsonResponse = new StringBuilder();
 
-        jsonResponse.append("HTTP/1.1 " + metodo.getStatusCode() + " " + metodo.getReasonText() + "\r\n");
-        jsonResponse.append("Date: " + new java.util.Date() + "\r\n");
-        jsonResponse.append("Server: ProjetoRedes/2023\r\n");
-        jsonResponse.append("Content-Type: application/json\r\n");
-        jsonResponse.append("Connection: keep-alive\r\n"); // HTTP 1.1
-        jsonResponse.append("\r\n");
-        jsonResponse.append("{\"felipe\": \"Admirador secreto de tarciana!\"}");
+    jsonResponse.append("HTTP/1.1 " + status.getStatusCode() + " " + status.getReasonText() + "\r\n");
+    jsonResponse.append("Date: " + new java.util.Date() + "\r\n");
+    jsonResponse.append("Host : localhost\r\n");
+    jsonResponse.append("Content-Type: application/json\r\n");
+    jsonResponse.append("Connection: keep-alive\r\n"); // HTTP 1.1
+    jsonResponse.append("\r\n");
+    if(!status.equals(HTTPStatus.NO_CONTENT))
+      jsonResponse.append("{ \""+mensagem+"\" : \"Admirador secreto de tarciana!\"}");
 
-        out.write(jsonResponse.toString());
-        out.flush();
-    }
 
-    private void sendErrorReponse(int code, String reasonText) throws IOException {
-
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-        StringBuilder response = new StringBuilder();
-
-        response.append("HTTP/1.1 " + code + " " + reasonText + "\r\n");
-        response.append("Date: " + new java.util.Date() + "\r\n");
-        response.append("Server: ProjetoRedes/2023\r\n");
-        response.append("Content-Type: text/plain\r\n");
-        response.append("Connection: close\r\n");
-        response.append("\r\n");
-
-        out.write(response.toString());
-        out.flush();
-    }
+    out.write(jsonResponse.toString());
+    out.flush();
+  }
 }
+
+
+
