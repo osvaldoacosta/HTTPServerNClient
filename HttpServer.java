@@ -1,6 +1,8 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HttpServer {
   public static void main(String[] args) {
@@ -79,16 +81,35 @@ class HandlerServerHttp implements Runnable {
       System.err.println("Body:\n" + bodyData);
 
       switch (requestHttpMethod){
-        case "GET" -> sendResponse(HTTPStatus.OK);
+        case "GET" -> {
+          Person p = new Person();
+
+          p.fromJSON(bodyData.toString());
+
+          System.err.println(p);
+
+          mensagem = p.toJSON();
+          sendResponse(HTTPStatus.OK);
+        }
         case "POST" -> {
           if(mensagem.isEmpty()){
-            mensagem = "teste";
+
             sendResponse(HTTPStatus.CREATED);
           }
           else sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
         }
         case "PUT" -> {
-          mensagem = "testePut";
+          try {
+
+            Person p = new Person();
+
+            p.fromJSON(bodyData.toString());
+
+            System.err.println(p);
+          }
+          catch (IOException e){
+            sendResponse(HTTPStatus.BAD_REQUEST);
+          }
 
           sendResponse(HTTPStatus.NO_CONTENT);
         }
@@ -120,12 +141,13 @@ class HandlerServerHttp implements Runnable {
     responseBuilder.append("Connection: close\r\n"); // HTTP 1.1
     responseBuilder.append("\r\n");
     if(!status.equals(HTTPStatus.NO_CONTENT) && !status.isError())
-      responseBuilder.append("{ \""+mensagem+"\" : \"Admirador secreto de tarciana!\"}");
+      responseBuilder.append(mensagem);
 
 
     out.write(responseBuilder.toString());
     out.flush();
   }
+
 }
 
 

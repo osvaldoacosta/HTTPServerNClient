@@ -1,6 +1,10 @@
-HTTPStatus -> É o enum contendo os tipos de status que tarciana quer, com seus codigos e suas mensagens
+HTTPStatus -> É o enum contendo os tipos de status http que usaremos, com seus codigos e suas mensagens.
+
 HTTPServer -> É o server http propriamente dito
-->
+
+HTTPClient -> É o client que poderemos fazer requisições http nele, chamando assim o server, se assemelha ao telnet, porém recomendo ficar no postman para testar
+
+---
 Essa parte está tratando possiveis erros na requisiçao do client, e printado a primera linha da requisição que é no formato (METODO URI VERSAO_HTTP)
 
 ```
