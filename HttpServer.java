@@ -22,21 +22,73 @@ public class HttpServer {
 
 class HandlerServerHttp implements Runnable {
   private final Socket clientSocket;
+  private String nomeDoArquivo = "meuObjeto.txt";
 
   private static String mensagem = "felipe";
 
   public HandlerServerHttp(Socket clientSocket) {
     this.clientSocket = clientSocket;
   }
+  
+  public void ImputInfoFile() {
+  	try {
+          FileInputStream arquivoInput = new FileInputStream(this.nomeDoArquivo);
+
+          ObjectInputStream objetoInput = new ObjectInputStream(arquivoInput);
+
+          StringBuilder objetoLido = (StringBuilder) objetoInput.readObject();
+
+          objetoInput.close();
+
+          System.out.println("Objeto lido com sucesso: " + objetoLido);
+
+      } catch (IOException | ClassNotFoundException e) {
+          e.printStackTrace();
+      }
+  }
+  public void SaveInfoFile(StringBuilder mensagem) {
+
+      try {
+          FileOutputStream arquivoOutput = new FileOutputStream(this.nomeDoArquivo);
+
+          ObjectOutputStream objetoOutput = new ObjectOutputStream(arquivoOutput);
+
+          objetoOutput.writeObject(mensagem);
+
+          objetoOutput.close();
+          arquivoOutput.close();
+
+          System.out.println("Objeto salvo com sucesso em " + nomeDoArquivo);
+      } catch (IOException e) {
+          e.printStackTrace();
+      }
+  }
+  
+  public void ClearFile() {
+
+      try {
+          FileWriter arquivoWriter = new FileWriter(this.nomeDoArquivo);
+
+          arquivoWriter.write("");
+
+          arquivoWriter.close();
+
+          System.out.println("Dados do arquivo " + nomeDoArquivo + " foram apagados com sucesso.");
+
+      } catch (IOException e) {
+          e.printStackTrace();
+      }
+  }
 
   @Override
   public void run() {
+	File arquivo = new File(this.nomeDoArquivo);
     System.out.println("Nova requisicao!!!");
 
     try (
       BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
       String requestLine = in.readLine();
-
+      
 
       if (requestLine == null) {
         sendResponse(HTTPStatus.BAD_REQUEST);
@@ -70,27 +122,40 @@ class HandlerServerHttp implements Runnable {
         headerData.append(line).append("\r\n");
       }
 
-      // Lê e armazena o body da requisicao
+      // Le e armazena o body da requisicao
       while (in.ready()) {
         bodyData.append((char) in.read());
       }
 
       System.out.println("Headers:\n" + headerData);
+      
       System.err.println("Body:\n" + bodyData);
 
       switch (requestHttpMethod){
-        case "GET" -> sendResponse(HTTPStatus.OK);
+        case "GET" -> {
+        	if (arquivo.exists()) {
+        		ImputInfoFile();
+        		sendResponse(HTTPStatus.OK);
+        	}
+        	else sendResponse(HTTPStatus.NOT_FOUND);
+        }
         case "POST" -> {
-          if(mensagem.isEmpty()){
-            mensagem = "teste";
-            sendResponse(HTTPStatus.CREATED);
+          if(!arquivo.exists() || arquivo.length() == 0){
+        	  SaveInfoFile(bodyData);
+        	  mensagem = "teste";
+        	  sendResponse(HTTPStatus.CREATED);
           }
-          else sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
+          else {
+        	  sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
+          }
         }
         case "PUT" -> {
-          mensagem = "testePut";
-
-          sendResponse(HTTPStatus.NO_CONTENT);
+        	if(arquivo.exists() && arquivo.length() != 0) {
+	          mensagem = "testePut";
+	          ClearFile();
+	          SaveInfoFile(bodyData);
+	          sendResponse(HTTPStatus.NO_CONTENT);
+        	}
         }
         default -> sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
       }
