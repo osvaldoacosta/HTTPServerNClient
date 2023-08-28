@@ -75,7 +75,7 @@ class HandlerServerHttp implements Runnable {
         bodyData.append((char) in.read());
       }
 
-      System.out.println("Headers:\n" + headerData);
+      System.err.println("Headers:\n" + headerData);
       System.err.println("Body:\n" + bodyData);
 
       switch (requestHttpMethod){
@@ -111,19 +111,19 @@ class HandlerServerHttp implements Runnable {
   private void sendResponse(HTTPStatus status) throws IOException {
 
     BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-    StringBuilder jsonResponse = new StringBuilder();
+    StringBuilder responseBuilder = new StringBuilder();
 
-    jsonResponse.append("HTTP/1.1 " + status.getStatusCode() + " " + status.getReasonText() + "\r\n");
-    jsonResponse.append("Date: " + new java.util.Date() + "\r\n");
-    jsonResponse.append("Host : localhost\r\n");
-    jsonResponse.append("Content-Type: application/json\r\n");
-    jsonResponse.append("Connection: keep-alive\r\n"); // HTTP 1.1
-    jsonResponse.append("\r\n");
-    if(!status.equals(HTTPStatus.NO_CONTENT))
-      jsonResponse.append("{ \""+mensagem+"\" : \"Admirador secreto de tarciana!\"}");
+    responseBuilder.append("HTTP/1.1 " + status.getStatusCode() + " " + status.getReasonText() + "\r\n");
+    responseBuilder.append("Date: " + new java.util.Date() + "\r\n");
+    responseBuilder.append("Host : localhost\r\n");
+    responseBuilder.append("Content-Type: application/json\r\n");
+    responseBuilder.append("Connection: close\r\n"); // HTTP 1.1
+    responseBuilder.append("\r\n");
+    if(!status.equals(HTTPStatus.NO_CONTENT) && !status.isError())
+      responseBuilder.append("{ \""+mensagem+"\" : \"Admirador secreto de tarciana!\"}");
 
 
-    out.write(jsonResponse.toString());
+    out.write(responseBuilder.toString());
     out.flush();
   }
 }

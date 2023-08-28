@@ -15,15 +15,15 @@ public enum HTTPStatus {
         this.reasonText = reasonText;
     }
 
-    HTTPStatus(int statusCode) {
-        this(statusCode, null);
-    }
-
     public int getStatusCode() {
         return statusCode;
     }
 
     public String getReasonText() {
         return reasonText;
+    }
+
+    public boolean isError() {
+        return statusCode >= 400 && statusCode < 600;
     }
 }
