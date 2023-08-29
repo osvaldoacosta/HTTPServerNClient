@@ -3,9 +3,11 @@ public enum HTTPStatus {
     OK(200, "OK"),
     CREATED(201, "Created"),
     NO_CONTENT(204, "No Content"),
-    METHOD_NOT_ALLOWED(405,"Method Not Allowed"),
     BAD_REQUEST(400,"Bad request"),
-    NOT_FOUND(404,"Not Found");
+    NOT_FOUND(404,"Not Found"),
+    METHOD_NOT_ALLOWED(405,"Method Not Allowed"),
+    CONFLICT(409, "Conflict");
+
 
     private final int statusCode;
     private final String reasonText;
@@ -24,6 +26,8 @@ public enum HTTPStatus {
     }
 
     public boolean isError() {
-        return statusCode >= 400 && statusCode < 600;
+        return statusCode > 399 && statusCode < 600;
     }
+
+
 }

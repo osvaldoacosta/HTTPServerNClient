@@ -1,7 +1,9 @@
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
-public class Person {
+public class Person implements Serializable {
     private String nome;
     private Integer idade;
     private String email;
@@ -12,7 +14,8 @@ public class Person {
         this.email = email;
     }
 
-    public Person() {
+    public Person(String jsonBody) throws IOException {
+        fromJSON(jsonBody);
     }
 
     public String getNome() {
@@ -42,26 +45,23 @@ public class Person {
     public void fromJSON(String jsonString) throws IOException {
         Map<String, Object> jsonMap = HandlerJSON.parseJson(jsonString);
         System.out.println(jsonMap);
-        if(jsonMap == null){
+        if(jsonMap == null || jsonMap.size() != 3){
             throw new IOException("Erro no parse");
         }
-        try {
+
             this.nome = ((String) jsonMap.get("nome"));
             this.idade = ((int)jsonMap.get("idade"));
             this.email= ((String) jsonMap.get("email"));
-        }
-        catch (Exception e){
+
+        if(nome == null){
             throw new IOException("Json Invalido!");
         }
     }
 
+    //Pra facilitar a conversao para json
     @Override
     public String toString() {
-        return "Person{" +
-                "nome - '" + nome + '\'' +
-                ", idade - " + idade +
-                ", email - '" + email + '\'' +
-                '}';
+        return toJSON();
     }
 
     public String toJSON() {
@@ -71,4 +71,7 @@ public class Person {
                 "\"email\":\"" + email + "\"" +
                 "}";
     }
+
+
+
 }

@@ -1,152 +1,190 @@
 
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class HttpServer {
-  public static void main(String[] args) {
-    int port = 8080;
-    try {
-      final ServerSocket serverSocket = new ServerSocket(port);
-      System.err.println("Servidor iniciado na porta : " + port);
+    public static void main(String[] args) {
+        int port = 8080;
+        try {
+            final ServerSocket serverSocket = new ServerSocket(port);
+            System.err.println("Servidor iniciado na porta : " + port);
 
-      while (true) {
-        final Socket clientSocket = serverSocket.accept();
-        Thread thread = new Thread(new HandlerServerHttp(clientSocket));
-        thread.start();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
+            while (true) {
+                final Socket clientSocket = serverSocket.accept();
+                Thread thread = new Thread(new HandlerServerHttp(clientSocket));
+                thread.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-  }
 }
 
 class HandlerServerHttp implements Runnable {
-  private final Socket clientSocket;
+    private final Socket clientSocket;
 
-  private static String mensagem = "felipe";
+    private static String mensagem = "";
 
-  public HandlerServerHttp(Socket clientSocket) {
-    this.clientSocket = clientSocket;
-  }
-
-  @Override
-  public void run() {
-    System.out.println("Nova requisicao!!!");
-
-    try (
-      BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
-      String requestLine = in.readLine();
-
-
-      if (requestLine == null) {
-        sendResponse(HTTPStatus.BAD_REQUEST);
-        return;
-      }
-      System.out.println(requestLine);
-      String[] requestParts = requestLine.split(" ");
-
-      if (requestParts.length < 3) {
-        sendResponse(HTTPStatus.BAD_REQUEST);
-        return;
-      }
-
-      String requestHttpMethod = requestParts[0]; // Extraindo o metodo http
-      String uri = requestParts[1]; // Extraindo a URI
-      String httpVersion = requestParts[2]; // Extraindo a versao http da requisicao do cliente
-
-      System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
-
-      if(!uri.equals("/pessoa")){
-        sendResponse(HTTPStatus.NOT_FOUND);
-        return;
-      }
-
-      StringBuilder bodyData = new StringBuilder();
-      String line;
-      StringBuilder headerData= new StringBuilder();
-
-      //Le e armazena os headers
-      while ((line = in.readLine()) != null && !line.isEmpty()) {
-        headerData.append(line).append("\r\n");
-      }
-
-      // Lê e armazena o body da requisicao
-      while (in.ready()) {
-        bodyData.append((char) in.read());
-      }
-
-      System.err.println("Headers:\n" + headerData);
-      System.err.println("Body:\n" + bodyData);
-
-      switch (requestHttpMethod){
-        case "GET" -> {
-          Person p = new Person();
-
-          p.fromJSON(bodyData.toString());
-
-          System.err.println(p);
-
-          mensagem = p.toJSON();
-          sendResponse(HTTPStatus.OK);
-        }
-        case "POST" -> {
-          if(mensagem.isEmpty()){
-
-            sendResponse(HTTPStatus.CREATED);
-          }
-          else sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
-        }
-        case "PUT" -> {
-          try {
-
-            Person p = new Person();
-
-            p.fromJSON(bodyData.toString());
-
-            System.err.println(p);
-          }
-          catch (IOException e){
-            sendResponse(HTTPStatus.BAD_REQUEST);
-          }
-
-          sendResponse(HTTPStatus.NO_CONTENT);
-        }
-        default -> sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
-      }
-
-
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        clientSocket.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+    public HandlerServerHttp(Socket clientSocket) {
+        this.clientSocket = clientSocket;
     }
-  }
 
-  private void sendResponse(HTTPStatus status) throws IOException {
+    @Override
+    public void run() {
+        System.out.println("Nova requisicao!!!");
 
-    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-    StringBuilder responseBuilder = new StringBuilder();
-
-    responseBuilder.append("HTTP/1.1 " + status.getStatusCode() + " " + status.getReasonText() + "\r\n");
-    responseBuilder.append("Date: " + new java.util.Date() + "\r\n");
-    responseBuilder.append("Host : localhost\r\n");
-    responseBuilder.append("Content-Type: application/json\r\n");
-    responseBuilder.append("Connection: close\r\n"); // HTTP 1.1
-    responseBuilder.append("\r\n");
-    if(!status.equals(HTTPStatus.NO_CONTENT) && !status.isError())
-      responseBuilder.append(mensagem);
+        try (
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
+            String requestLine = in.readLine();
 
 
-    out.write(responseBuilder.toString());
-    out.flush();
-  }
+            if (requestLine == null) {
+                sendResponse(HTTPStatus.BAD_REQUEST);
+                return;
+            }
+            System.out.println(requestLine);
+            String[] requestParts = requestLine.split(" ");
+
+            if (requestParts.length < 3) {
+                sendResponse(HTTPStatus.BAD_REQUEST);
+                return;
+            }
+
+            String requestHttpMethod = requestParts[0]; // Extraindo o metodo http
+            String uri = requestParts[1]; // Extraindo a URI
+            String httpVersion = requestParts[2]; // Extraindo a versao http da requisicao do cliente
+
+            System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
+
+            if (!uri.startsWith("/pessoa")) {
+                sendResponse(HTTPStatus.NOT_FOUND);
+                return;
+            }
+            String pessoaId = uri.substring("/pessoa".length());
+
+
+            StringBuilder bodyData = new StringBuilder();
+            String line;
+            StringBuilder headerData = new StringBuilder();
+
+            //Le e armazena os headers
+            while ((line = in.readLine()) != null && !line.isEmpty()) {
+                headerData.append(line).append("\r\n");
+            }
+
+            // Lê e armazena o body da requisicao
+            while (in.ready()) {
+                bodyData.append((char) in.read());
+            }
+
+            System.err.println("Headers do cliente:\n" + headerData);
+            System.err.println("Body do cliente:\n" + bodyData);
+
+
+            switch (requestHttpMethod) {
+                case "GET" -> handleGetMethod(pessoaId);
+                case "POST" -> handlePostMethod(bodyData);
+                case "PUT" -> handlePutMethod(pessoaId, bodyData);
+                default -> sendResponse(HTTPStatus.METHOD_NOT_ALLOWED);
+            }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void sendResponse(HTTPStatus status) throws IOException {
+        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+        StringBuilder responseBuilder = new StringBuilder();
+
+        responseBuilder.append("HTTP/1.1 ").append(status.getStatusCode()).append(" ").append(status.getReasonText()).append("\r\n");
+        responseBuilder.append("Date: ").append(new java.util.Date()).append("\r\n");
+        responseBuilder.append("Host: localhost\r\n");
+
+        if (!mensagem.isBlank() && !status.equals(HTTPStatus.NO_CONTENT) && !status.isError()) {
+            responseBuilder.append("Content-Type: application/json\r\n");
+            responseBuilder.append("Content-Length: ").append(mensagem.length()).append("\r\n");
+        }
+
+        responseBuilder.append("Connection: close\r\n");
+        responseBuilder.append("\r\n");
+
+        if (!status.equals(HTTPStatus.NO_CONTENT) && !status.isError()) {
+            responseBuilder.append(mensagem);
+        }
+
+        out.write(responseBuilder.toString());
+        out.flush();
+    }
+
+
+    private void handlePutMethod(String pessoaId, StringBuilder bodyData) throws IOException {
+        //Vai editar os dados de uma pessoa (menos o nome, pois eh o identificador).
+
+        try {
+            String nome = pessoaId.split("/")[1];
+
+            PersonService.editarPessoa(nome,bodyData);
+            sendResponse(HTTPStatus.NO_CONTENT);
+        }
+        catch (IOException|StringIndexOutOfBoundsException|ArrayIndexOutOfBoundsException e){
+            sendResponse(HTTPStatus.BAD_REQUEST);
+        }
+
+
+
+    }
+    private void handlePostMethod(StringBuilder bodyData) throws IOException {
+        //Vai criar uma pessoa, se uma pessoa com um mesmo nome ja existir, ele retornara um method not allowed.
+        try {
+
+            Person person = new Person(bodyData.toString());
+            if (PersonService.personExists(person)) {
+                sendResponse(HTTPStatus.CONFLICT);
+                return;
+            }
+            PersonService.salvarPessoa(person);
+            mensagem = person.toJSON();
+        } catch (IOException|StringIndexOutOfBoundsException e) {
+            sendResponse(HTTPStatus.BAD_REQUEST);
+            return;
+        }
+
+        sendResponse(HTTPStatus.CREATED);
+    }
+
+    private void handleGetMethod(String pessoaId) throws IOException {
+
+        //Vai Pegar todos as pessoas do banco
+        if (pessoaId.length() < 2) {
+            List<Person> people = FileDatabase.resgatarTodasPessoas();
+            mensagem = PersonService.fromListToJsonArray(people);
+            sendResponse(HTTPStatus.OK);
+            return;
+        }
+
+        //Vai pegar uma pessoa especifica, baseada no nome, se nao achar nenhuma retorna not found
+        try {
+            String nome = pessoaId.split("/")[1];
+            Person person = PersonService.resgatarPessoaPorNome(nome);
+            mensagem = person.toJSON();
+
+        } catch (IOException e) {
+            sendResponse(HTTPStatus.NOT_FOUND);
+            return;
+        }
+
+        sendResponse(HTTPStatus.OK);
+    }
+
 
 }
 
