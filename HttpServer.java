@@ -39,7 +39,7 @@ class HandlerServerHttp implements Runnable {
             String requestLine = in.readLine();
 
 
-            if (requestLine == null) {
+            if (requestLine == null || requestLine.isBlank()) {
                 sendResponse(HTTPStatus.BAD_REQUEST);
                 return;
             }
@@ -153,7 +153,7 @@ class HandlerServerHttp implements Runnable {
             }
             PersonService.salvarPessoa(person);
             mensagem = person.toJSON();
-        } catch (IOException|StringIndexOutOfBoundsException e) {
+        } catch (IOException|StringIndexOutOfBoundsException|ArrayIndexOutOfBoundsException e) {
             sendResponse(HTTPStatus.BAD_REQUEST);
             return;
         }
