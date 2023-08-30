@@ -58,7 +58,7 @@ class HandlerServerHttp implements Runnable {
             System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
 
             if (!uri.startsWith("/pessoa")) {
-                sendResponse(HTTPStatus.NOT_FOUND);
+                sendResponse(HTTPStatus.NOT_IMPLEMENTED);
                 return;
             }
             String pessoaId = uri.substring("/pessoa".length());
@@ -109,7 +109,7 @@ class HandlerServerHttp implements Runnable {
         responseBuilder.append("Date: ").append(new java.util.Date()).append("\r\n");
         responseBuilder.append("Host: localhost\r\n");
 
-        if (!mensagem.isBlank() && !status.equals(HTTPStatus.NO_CONTENT) && !status.isError()) {
+        if (!mensagem.isBlank()  && !status.isError()) {
             responseBuilder.append("Content-Type: application/json\r\n");
             responseBuilder.append("Content-Length: ").append(mensagem.length()).append("\r\n");
         }
@@ -123,6 +123,7 @@ class HandlerServerHttp implements Runnable {
 
         out.write(responseBuilder.toString());
         out.flush();
+
     }
 
 
@@ -173,6 +174,7 @@ class HandlerServerHttp implements Runnable {
 
         //Vai pegar uma pessoa especifica, baseada no nome, se nao achar nenhuma retorna not found
         try {
+
             String nome = pessoaId.split("/")[1];
             Person person = PersonService.resgatarPessoaPorNome(nome);
             mensagem = person.toJSON();

@@ -6,7 +6,8 @@ public enum HTTPStatus {
     BAD_REQUEST(400,"Bad request"),
     NOT_FOUND(404,"Not Found"),
     METHOD_NOT_ALLOWED(405,"Method Not Allowed"),
-    CONFLICT(409, "Conflict");
+    CONFLICT(409, "Conflict"),
+    NOT_IMPLEMENTED(501, "Not Implemented");
 
 
     private final int statusCode;

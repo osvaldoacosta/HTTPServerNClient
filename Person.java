@@ -44,18 +44,19 @@ public class Person implements Serializable {
 
     public void fromJSON(String jsonString) throws IOException {
         Map<String, Object> jsonMap = HandlerJSON.parseJson(jsonString);
-        System.out.println(jsonMap);
         if(jsonMap == null || jsonMap.size() != 3){
             throw new IOException("Erro no parse");
         }
 
+        try {
             this.nome = ((String) jsonMap.get("nome"));
             this.idade = ((int)jsonMap.get("idade"));
             this.email= ((String) jsonMap.get("email"));
-
-        if(nome == null){
+        }
+        catch (NullPointerException e){
             throw new IOException("Json Invalido!");
         }
+
     }
 
     //Pra facilitar a conversao para json

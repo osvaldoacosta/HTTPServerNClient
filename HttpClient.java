@@ -17,7 +17,8 @@ public class HttpClient {
         String host = hostPortArr[0];
         int port = Integer.parseInt(hostPortArr[1]);
 
-        try (Socket clientSocket = new Socket(host, port);
+        try (
+                Socket clientSocket = new Socket(host, port);
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
              BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
 
@@ -56,7 +57,8 @@ public class HttpClient {
             while ((line = in.readLine()) != null) {
                 System.err.println(line);
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }

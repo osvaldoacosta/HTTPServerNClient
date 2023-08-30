@@ -3,6 +3,7 @@ import java.util.Map;
 
 public class  HandlerJSON {
 
+
     public static Map<String, Object> parseJson(String jsonString) {
         Map<String, Object> jsonMap = new HashMap<>();
 
@@ -38,6 +39,7 @@ public class  HandlerJSON {
 
         return jsonMap;
     }
+
 
 
 }
