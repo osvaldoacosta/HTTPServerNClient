@@ -35,7 +35,7 @@ public class HttpClient {
             bodyBuilder.append(consoleReader.readLine().trim());
 
 
-            requestBuilder.append("Host: ").append(host).append("\r\n");
+            requestBuilder.append("Host: ").append(host).append(":").append(port).append("\r\n");
 
             if(!bodyBuilder.isEmpty()){
 

@@ -26,6 +26,8 @@ class HandlerServerHttp implements Runnable {
 
     private static String mensagem = "";
 
+    private static String httpVersion = "";
+
     public HandlerServerHttp(Socket clientSocket) {
         this.clientSocket = clientSocket;
     }
@@ -53,12 +55,17 @@ class HandlerServerHttp implements Runnable {
 
             String requestHttpMethod = requestParts[0]; // Extraindo o metodo http
             String uri = requestParts[1]; // Extraindo a URI
-            String httpVersion = requestParts[2]; // Extraindo a versao http da requisicao do cliente
+            httpVersion = requestParts[2]; // Extraindo a versao http da requisicao do cliente
+
+            if(!(httpVersion.equalsIgnoreCase("HTTP/1.0") || httpVersion.equalsIgnoreCase("HTTP/1.1"))){
+                sendResponse(HTTPStatus.VERSION_NOT_SUPPORTED);
+                return;
+            }
 
             System.out.println("Metodo: " + requestHttpMethod + "\nURI: " + uri + "\nVersao HTTP: " + httpVersion);
 
             if (!uri.startsWith("/pessoa")) {
-                sendResponse(HTTPStatus.NOT_IMPLEMENTED);
+                sendResponse(HTTPStatus.BAD_REQUEST);
                 return;
             }
             String pessoaId = uri.substring("/pessoa".length());
@@ -105,9 +112,9 @@ class HandlerServerHttp implements Runnable {
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         StringBuilder responseBuilder = new StringBuilder();
 
-        responseBuilder.append("HTTP/1.1 ").append(status.getStatusCode()).append(" ").append(status.getReasonText()).append("\r\n");
+        responseBuilder.append(httpVersion).append(" ").append(status.getStatusCode()).append(" ").append(status.getReasonText()).append("\r\n");
         responseBuilder.append("Date: ").append(new java.util.Date()).append("\r\n");
-        responseBuilder.append("Host: localhost\r\n");
+        responseBuilder.append("Server: ServidorHTTP\r\n");
 
         if (!mensagem.isBlank()  && !status.isError()) {
             responseBuilder.append("Content-Type: application/json\r\n");
